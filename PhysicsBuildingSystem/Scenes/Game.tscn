@@ -1,0 +1,71 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://Scenes/Ground.tscn" type="PackedScene" id=1]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Node2D
+
+# Declare member variables here. Examples:
+# var a = 2
+# var b = \"text\"
+var BuildingStructure = preload(\"res://Scenes/BuildingStructure.tscn\")
+#var BuildingBlock = preload(\"res://Scenes/BuildingBlock.tscn\")
+var camera:Camera2D = null
+var worldMousePosition:Vector2 = Vector2(0,0)
+var worldMouseGridPosition:Vector2 = Vector2(0,0)
+var selectedStructure = null
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	camera = get_child(0)
+
+func _input(e):
+	if (e is InputEventMouseMotion):
+		worldMousePosition = camera.position + e.position
+		worldMouseGridPosition = worldMousePosition / Globals.GRID_CELL_SIZE
+		worldMouseGridPosition.x = floor(worldMouseGridPosition.x)
+		worldMouseGridPosition.y = floor(worldMouseGridPosition.y)
+		update()
+	if (e is InputEventMouseButton):
+		if (e.button_index == BUTTON_LEFT and e.pressed):
+			if (selectedStructure == null):
+				selectedStructure = BuildingStructure.instance()
+				selectedStructure.position = worldMouseGridPosition * Globals.GRID_CELL_SIZE + Vector2(Globals.GRID_CELL_SIZE/2,Globals.GRID_CELL_SIZE/2)
+				selectedStructure.add_block(0,0)
+				add_child(selectedStructure)
+			else:
+				
+				var cellPos = selectedStructure.get_cell(worldMousePosition.x,worldMousePosition.y)
+				print(\"Cell: \" + str(cellPos))
+				selectedStructure.add_block(cellPos.x,cellPos.y)
+				
+				pass
+		
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	if (Input.is_action_just_pressed(\"ui_accept\")):
+		print(\"if mouse not on structure\")
+		print(\"\\tcreate structure\")
+		print(\"\\tadd root block to structure\")
+		print(\"else if mouse on structure\")
+		print(\"\\tadd block to existing structure\")
+
+func _draw():
+	if (!selectedStructure):
+		draw_rect(Rect2(worldMouseGridPosition*Globals.GRID_CELL_SIZE,Vector2(Globals.GRID_CELL_SIZE,Globals.GRID_CELL_SIZE)),Color.purple,false)
+		draw_circle(worldMouseGridPosition * Globals.GRID_CELL_SIZE + Vector2(Globals.GRID_CELL_SIZE/2,Globals.GRID_CELL_SIZE/2),3,Color.orange)
+		draw_string(Globals.font,worldMousePosition + Vector2(0,20),\"Mouse: \" + str(worldMousePosition) + \"Grid: \" + str(worldMouseGridPosition))
+	else:
+		draw_string(Globals.font,worldMousePosition + Vector2(0,20),\"Cell: \" + str(selectedStructure.get_cell(worldMousePosition.x,worldMousePosition.y)))"
+
+[node name="Game" type="Node2D"]
+script = SubResource( 1 )
+
+[node name="Camera2D" type="Camera2D" parent="."]
+anchor_mode = 0
+current = true
+
+[node name="Ground" parent="." instance=ExtResource( 1 )]
+position = Vector2( 506.308, 580.886 )
+

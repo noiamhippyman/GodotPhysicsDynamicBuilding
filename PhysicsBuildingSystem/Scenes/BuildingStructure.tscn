@@ -1,0 +1,80 @@
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends RigidBody2D
+
+var BuildingBlock = preload(\"res://Scenes/BuildingBlock.tscn\")
+
+func add_block(x,y):
+	var block = BuildingBlock.instance()
+	block.position = Vector2(x * Globals.GRID_CELL_SIZE,y * Globals.GRID_CELL_SIZE) + originOffset
+	weight += block.weight
+	
+	# godot doesn't allow setting weight to zero so get rid of initial weight value 
+	# when adding first block onto structure
+	if (get_child_count() == 0):
+		weight -= 0.01
+	
+	add_child(block)
+	
+	reposition = true
+	#update_com()
+	
+	update()
+
+func update_com():
+	reposition = true
+
+func get_cell(x,y):
+	
+	var point = (to_local(Vector2(x,y)) - originOffset + Vector2(Globals.GRID_CELL_SIZE/2,Globals.GRID_CELL_SIZE/2)) / Globals.GRID_CELL_SIZE
+	point.x = floor(point.x)
+	point.y = floor(point.y)
+	return point
+
+var originOffset = Vector2(0,0)
+var reposition = false;
+
+func _integrate_forces(state):
+	if (reposition):
+		var com = Vector2(0,0)
+		var children = get_children()
+		for child in children:
+			com.x += child.weight * child.position.x
+			com.y += child.weight * child.position.y
+		com.x /= weight
+		com.y /= weight
+		var diff = com
+		state.transform.origin += diff
+		for child in children:
+			child.position -= diff
+		originOffset -= diff
+		reposition = false
+
+#func _ready():
+	#pass
+
+# func _process(delta):
+	#pass
+	
+func _draw():
+	draw_circle(Vector2(0,0),4,Color.blue)
+	draw_string(Globals.font,Vector2(1,1),\"Weight:\" + str(weight))
+#for x in range(grid.size.x):
+		#for y in range(grid.size.y):
+		#	var cellPos = Vector2(x,y) * grid.cellSize
+		#	
+		#	var a = deg2rad(grid.angle)
+		#	var cosa = cos(a)
+		#	var sina = sin(a)
+		#	var transCellPos = Vector2(
+		#		cellPos.x * cosa + cellPos.y * sina,
+		#		cellPos.x * -sina + cellPos.y * cosa
+		#	)
+		#	draw_circle(grid.position + transCellPos, 3, Color.orange)"
+
+[node name="BuildingStructure" type="RigidBody2D"]
+input_pickable = true
+mass = 0.00102041
+script = SubResource( 1 )
+
